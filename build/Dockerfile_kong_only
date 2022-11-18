@@ -1,0 +1,18 @@
+FROM kong:2.8.2
+
+LABEL description="Kong 2.8.2 + kong-oidc plugin"
+
+USER root
+
+COPY ./plugins/ /usr/local/share/lua/5.1/kong/plugins/
+
+COPY ./lua_packages/ /home/kong/lua_packages/
+
+RUN chown -R kong:kong /usr/local/share/lua/5.1/kong/
+
+RUN luarocks install kong-oidc-1.1.0-0.src.rock && \
+    luarocks install luaossl-20200709-0.src.rock OPENSSL_DIR=/usr/local/kong CRYPTO_DIR=/usr/local/kong
+
+USER kong
+
+CMD ["kong", "docker-start"]
