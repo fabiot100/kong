@@ -157,7 +157,7 @@ NODE_ENV=development                                                            
 
 **NOTE 1** - If you already have a populated database (using an older kong version, for example), skip this step and go to [step 5](#step-5-kong-logs).
 
-1. Adjustments did, now you need to verify the docker-compose.yml file and do some configs. The code bellow contains only a part of the file with the lines you'll have to change. The commands should be uncommented and commented sometimes, but don’t worry, I’m going to explain soon:
+1. Adjustments did, now you need to verify the docker-compose.yml file and do some configs. The code below contains only a part of the file with the lines you'll have to change. The commands should be uncommented and commented sometimes, but don’t worry, I’m going to explain soon:
 
 ```yml
 kong:  
