@@ -23,7 +23,7 @@ This tutorial explains how to install Kong with ModSecurity using Docker.
 
 **NOTE** - Our workdir will be ***/opt/devops/kong***.
 
-**NOTE - This Kong version is 2.8.2 (open source). Because of this, the only encryptation type supported is MD5. To support SHA-256, I made a modification on Kong and Konga images.**
+**NOTE - This Kong version is 3.1.1 (open source). Because of this, the only encryptation type supported is MD5. To support SHA-256, I made a modification on Kong and Konga images.**
 
 ## Explaining some files/folders
 
@@ -75,8 +75,8 @@ local   replication     all                                     trust
 host    replication     all             127.0.0.1/32            trust
 host    replication     all             ::1/128                 trust
 
-hostssl kong kong 192.168.50.11/32 scram-sha-256 clientcert=0  #conexão Kong
-hostssl all all 0.0.0.0/0 cert  clientcert=1
+hostssl kong kong 192.168.50.11/32 scram-sha-256 #conexão Kong
+hostssl all all 0.0.0.0/0 cert
 ```
 
 The three last lines are what really matter now. The antepenult and the last but one line are about the connection using certificate, allowing only the listed containers sources (kong and konga). The last one line means that it's necessary a certificate configured on client to make the connection (in this case, all sources are liberated).
