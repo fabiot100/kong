@@ -2,7 +2,7 @@ version: '3.9'
     
 services:
   kong.db.com.br:
-    image: postgres:11-alpine
+    image: postgres:14-alpine
     container_name: kong.db.com.br
 # Uncoment de parameter below after you start the container for the first time
 #    user: postgres
@@ -14,7 +14,7 @@ services:
       - ./env/kong.env
     deploy:
       restart_policy:
-        condition: on-failure
+        condition: always
         max_attempts: 5
       resources:
         limits:
@@ -36,9 +36,9 @@ services:
     ports:
       - "80:8000" # Listener
       - "443:8443" # Listener (SSL)
-      - "8001:8001" # Admin API
-      - "8444:8444" # Admin API (SSL)
-      - "1337:1337" # Konga
+#      - "8001:8001" # Admin API
+#      - "8444:8444" # Admin API (SSL)
+      - "8002:8002" # Kong Manager OSS
     extra_hosts:
       - "server-name-here.com.br:127.0.0.1" 
     volumes:
@@ -51,7 +51,7 @@ services:
       - ./env/kong.env
     deploy:
       restart_policy:
-        condition: on-failure
+        condition: always
         max_attempts: 5
       resources:
         limits:
@@ -61,24 +61,6 @@ services:
     networks:
       kong-keycloak-net:
         ipv4_address: 192.168.50.11
-
-  konga:
-    image: konga-sha256-ldap:0.14.9
-    container_name: konga
-    env_file:
-      - ./env/kong.env
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 5
-      resources:
-        limits:
-          memory: 500M
-        reservations:
-          memory: 250M
-    networks:
-      kong-keycloak-net:
-        ipv4_address: 192.168.50.12
 
 networks:
   kong-keycloak-net: 

@@ -7,7 +7,7 @@ This tutorial explains how to install Kong with ModSecurity using Docker.
 
 - [Kong + ModSecurity installation tutorial using Docker](#kong--modsecurity-installation-tutorial-using-docker)
   - [Explaining some files/folders](#explaining-some-filesfolders)
-  - [Step 1 - Kong certificates (Nginx)](#step-1---kong-certificates-nginx)
+  - [Step 1 - Kong certificates (Virtual servers)](#step-1---kong-certificates-(virtual-servers))
   - [Step 2 - Preparing database](#step-2---preparing-database)
     - [Creating certificates](#creating-certificates)
       - [Configuring certificates on client](#configuring-certificates-on-client)
@@ -15,33 +15,31 @@ This tutorial explains how to install Kong with ModSecurity using Docker.
   - [Step 3 - Environments variables](#step-3---environments-variables)
   - [Step 4 - docker-compose.yml](#step-4---docker-composeyml)
   - [Step 5 - Kong logs](#step-5---kong-logs)
-  - [Step 6 - Initializing Konga database](#step-6---initializing-konga-database)
-  - [Step 7 - Creating Konga image](#step-7---creating-konga-image)
-  - [Step 8 - Initializing ModSecurity](#step-8---initializing-modsecurity)
-  - [Step 9 - Security policies](#step-9---security-policies)
-  - [Step 10 - Results](#step-10---results)
+  - [Step 6 - Initializing ModSecurity](#step-6---initializing-modsecurity)
+  - [Step 7 - Security policies](#step-7---security-policies)
+  - [Step 8 - Results](#step-8---results)
 
 **NOTE** - Our workdir will be ***/opt/devops/kong***.
 
-**NOTE - This Kong version is 2.8.2 (open source). Because of this, the only encryptation type supported is MD5. To support SHA-256, I made a modification on Kong and Konga images.**
+**NOTE - This Kong version is 3.5.0 (open source).**
 
 ## Explaining some files/folders
 
-**/kong/etc/kong/certif/** - this folder is where you put the certificates (database and others). This folder is used only if your project uses certificate(s);
+**kong/etc/kong/certif/** - this folder is where you put the certificates (database and others). This folder is used only if your project uses certificate(s);
 
 **build/plugins** – this folder is where you put the custom plugins;
 
-**/kong/etc/kong/my-server.kong.konf** – this is the custom nginx configuration file for this project, including certificates, configs and others.
+**kong/etc/kong/my-server.kong.konf** – this is the custom openresty configuration file for this project, including certificates, configs and others.
 
-## Step 1 - Kong certificates (Nginx)
+## Step 1 - Kong certificates (Virtual servers)
 
-To configure Kong certificates (Nginx), save them in **./kong/etc/kong/certif** folder and configure at **./kong/etc/kong/my-server.kong.conf**.
+To configure Kong certificates (Virtual servers), save them in **./kong/etc/kong/certif** folder and configure them at **kong/etc/kong/my-server.kong.conf**.
 
-**NOTE** - For update/new certificate, you'll have to restart kong container after that, to apply the new certificate.
+**NOTE** - For update/new certificate, you'll have to restart kong container after that to apply the new certificate.
 
 ## Step 2 - Preparing database
 
-To keep secure our connection between application and database, you'll configure an auto assign certificate for comunication **(I don't recommend to use auto assign certificate for production use)**. This certificate will be a **100 years valid**.
+To keep secure our connection between application and database, you'll configure an auto assign certificate for comunication **(I don't recommend to use auto assign certificate for production purpose)**. This certificate will be a **100 years valid**.
 
 **NOTE 1** - You'll need to start for the first time your PostgreSQL and create the application database. So execute the following command: 'docker-compose up -d kong.db.com.br'
 
@@ -79,9 +77,9 @@ hostssl kong kong 192.168.50.11/32 scram-sha-256 clientcert=0  #conexão Kong
 hostssl all all 0.0.0.0/0 cert  clientcert=1
 ```
 
-The three last lines are what really matter now. The antepenult and the last but one line are about the connection using certificate, allowing only the listed containers sources (kong and konga). The last one line means that it's necessary a certificate configured on client to make the connection (in this case, all sources are liberated).
+The three last lines are what really matter now. The penult line is about the connection using certificate, allowing only the listed container source (kong). The last one line means that it's necessary a certificate configured on client to make the connection (in this case, all sources are liberated).
 
-**NOTE** - Kong and Konga don't accept clientcert option equal 1. So knowing this, I'm using both methods (user/password and certificate).
+**NOTE** - Open source Kong version doesn't accept clientcert option equal to 1. So knowing this, I'm using both methods (user/password and certificate).
 
 *postgresql.conf* - in this file you'll configure the certificates path. Search in this file for the following lines:
 
@@ -104,7 +102,7 @@ Open /env/kong.env and adjust the parameters. At Konga environment, it's comment
 POSTGRES_USER=                                      # database_username
 POSTGRES_PASSWORD=                                  # database_password
 POSTGRES_DB=                                        # database_name
-POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256      # database_encryptation. If commented, it'll use MD5. Strongly recommended don't comment it.
+POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256      # database_encryptation
 
 #kong environment
 KONG_DATABASE=                                  # database_adapter
@@ -119,39 +117,14 @@ KONG_PROXY_ERROR_LOG=/dev/stderr
 KONG_ADMIN_ERROR_LOG=/dev/stderr
 KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl
 KONG_PROXY_LISTEN=0.0.0.0:8000, 0.0.0.0:8443 ssl
-KONG_PLUGINS=bundled, session, oidc                                             # custom_plugins_load
+KONG_ADMIN_GUI_URL=http://localhost:8002
+KONG_PLUGINS=bundled, session                                                   # custom_plugins_load
 KONG_LOG_LEVEL=info
 KONG_NGINX_HTTP_INCLUDE=/etc/kong/my-server.kong.conf                           # custom_nginx_config_path
 KONG_PG_SSL=on                                                                  # database_certificate_on/off
 KONG_PG_SSL_VERIFY=on                                                           # database_certificate_verify_on/off
 KONG_LUA_SSL_TRUSTED_CERTIFICATE=/etc/kong/certif/client_bundle.pem             # database_bundle_certificate_path
 
-#konga
-#DB_ADAPTER=                                                                     # database_adapter
-#DB_HOST=                                                                        # database_host
-#DB_PORT=                                                                        # database_port                                   
-#DB_DATABASE=                                                                    # database_name
-#DB_USER=                                                                        # database_username
-#DB_PASSWORD=                                                                    # database_password
-#DB_SSL=true                                                                     # database_certificate_true/false
-NODE_ENV=development                                                            # kong_environment_production/development
-#NODE_PG_FORCE_NATIVE=1                                                          # necessário para utilizar criptografica scram-sha-256 com postgres
-#NODE_TLS_REJECT_UNAUTHORIZED=0                                                  # necessário para utilizar autenticação via LDAP
-#KONGA_AUTH_PROVIDER=ldap                                                       # LDAP_autentication
-#KONGA_LDAP_HOST=                                                               # LDAP_host
-#KONGA_LDAP_BIND_DN=uid=sssd.bind,ou=services,dc=environment,dc=int
-#KONGA_LDAP_BIND_PASSWORD=
-#KONGA_LDAP_GROUP_ATTRS=cn
-#KONGA_LDAP_ATTR_USERNAME=uid
-#KONGA_LDAP_ATTR_FIRSTNAME=givenName
-#KONGA_LDAP_ATTR_LASTNAME=sn
-#KONGA_LDAP_USER_SEARCH_FILTER=(|(uid={{username}})(sAMAccountName={{username}}))
-#KONGA_LDAP_GROUP_SEARCH_FILTER=(|(memberUid={{uid}})(memberUid={{uidNumber}})(sAMAccountName={{uid}}))
-#KONGA_LDAP_USER_ATTRS=uid,uidNumber,givenName,sn
-#KONGA_LDAP_USER_SEARCH_BASE=dc=environment,dc=int
-#KONGA_LDAP_GROUP_SEARCH_BASE=dc=environment,dc=int
-#KONGA_LDAP_ATTR_EMAIL=uid
-#KONGA_ADMIN_GROUP_REG=^(devopsgr|developergr)$$
 ```
 ## Step 4 - docker-compose.yml
 
@@ -202,30 +175,8 @@ docker ps -a
 # Step 2
 docker logs container_name
 ```
-## Step 6 - Initializing Konga database
 
-**NOTE 1 - This step is only adequated if you want to use a database**
-
-**NOTE** - If you already have Konga working (with database tables created), ignore this step and go to [Step 8](#step-8-initializing-modsecurity).
-
-Use the command below to initialize the database and populate it with tables. Complete the command with the properly values replacing the example values (konga_image, username, password, host, port, database and schema):
-
-```bash
-docker run --network=kong-net --rm konga_image -c prepare -a postgres \
-           -u postgresql://username:"password"@host:port/database?currentSchema=schema
-```
-
-## Step 7 - Creating Konga image
-
-In this repository, uncompress kongaService.tar and access it. There, run the following command:
-
-```bash
-docker image build -t konga-sha256-ldap:0.14.9
-```
-
-This is a custom version of Konga, allowing to use sha-256 and ldap autentication.
-
-## Step 8 - Initializing ModSecurity
+## Step 6 - Initializing ModSecurity
 
 Now you have to copy ModSecurity and coreruleset folders to your machine to work like a volume (if you don't copy them and only configure your docker-compose.yml, it will not work).
 
@@ -268,18 +219,18 @@ Now, execute the command below to restart all the service:
 docker-compose down && docker-compose up -d
 ```
 
-## Step 9 - Security policies
+## Step 7 - Security policies
 
 To ensure the folders and files security, you should now apply some security policies:
 
 ```bash
-cd /opt && chmod 770 devops/ && \
-cd devops && chmod 770 kong/ && \
-cd kong && chmod 770 -R build/ env/ docker-compose.yml && chmod 775 -R kong/
+cd /opt && chmod 775 devops/ && \
+cd devops && chmod 775 kong/ && \
+cd kong && chmod 775 -R build/ env/ docker-compose.yml kong/
 ```
 
-This will ensure that only root user (or users into root group) access the kong directory and yours folders and files.
+This will ensure that only root user (or users into root group) can edit files at Kong directory.
 
-## Step 10 - Results
+## Step 8 - Results
 
-At this point, all the applications are running. To manage the kong configs, access the following link http://ip_machine:1337 and login on Konga to create the first admin and it's password (will only happen if you used an empty database, otherwise you'll need to put the username and password already registered).
+At this point, all the applications are running. To manage the kong, you can access the following link http://ip_machine:8002 and use Kong-Manager-OSS.
