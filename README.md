@@ -73,8 +73,8 @@ local   replication     all                                     trust
 host    replication     all             127.0.0.1/32            trust
 host    replication     all             ::1/128                 trust
 
-hostssl kong kong 192.168.50.11/32 scram-sha-256 clientcert=0  #conexão Kong
-hostssl all all 0.0.0.0/0 cert  clientcert=1
+hostssl kong kong 192.168.50.11/32 scram-sha-256 #conexão Kong
+hostssl all all 0.0.0.0/0 cert
 ```
 
 The three last lines are what really matter now. The penult line is about the connection using certificate, allowing only the listed container source (kong). The last one line means that it's necessary a certificate configured on client to make the connection (in this case, all sources are liberated).
